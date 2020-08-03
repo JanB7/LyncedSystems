@@ -1,0 +1,24 @@
+#!/bin/bash
+
+DB_USER='dbUser'
+DB_PASSWD='Factory1'
+DB_NAME='KepDATA'
+TABLE='SysMon'
+
+while :
+do
+
+CPU=$(echo "CPU `LC_ALL=C top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1}'`% RAM `free -m | awk '/Mem:/ { printf("%3.1f%%", $3/$2*100) }'` HDD `df -h / | awk '/\// {print $(NF-1)}'`" | tr -d % | cut -d' ' -f 2)
+HDD=$(echo "CPU `LC_ALL=C top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1}'`% RAM `free -m | awk '/Mem:/ { printf("%3.1f%%", $3/$2*100) }'` HDD `df -h / | awk '/\// {print $(NF-1)}'`" | tr -d % | cut -d' ' -f 6)
+RAM=$(echo "CPU `LC_ALL=C top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1}'`% RAM `free -m | awk '/Mem:/ { printf("%3.1f%%", $3/$2*100) }'` HDD `df -h / | awk '/\// {print $(NF-1)}'`" | tr -d % | cut -d' ' -f 4)
+
+mysql --user=$DB_USER --password=$DB_PASSWD $DB_NAME << EOF
+INSERT INTO $TABLE ( \`CPU\`, \`HDD\`, \`RAM\`) VALUES ("$CPU", "$HDD", "$RAM");
+EOF
+
+mysql --user=$DB_USER --password=$DB_PASSWD $DB_NAME << EOF
+DELETE FROM $TABLE WHERE DateTime < (NOW() - INTERVAL 30 DAY)
+EOF
+
+sleep 10
+done
